@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Objectif Cervin 4478m</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .matterhorn-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        .card-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-tap:active {
+            transform: scale(0.95);
+        }
+        /* Custom Scrollbar for history */
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- ICONS ---
+        const IconBase = ({ size = 24, className = "", children }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Mountain = (p) => <IconBase {...p}><path d="m8 3 4 8 5-5 5 15H2L8 3z" /></IconBase>;
+        const MapPin = (p) => <IconBase {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></IconBase>;
+        const Watch = (p) => <IconBase {...p}><circle cx="12" cy="12" r="7" /><polyline points="12 9 12 12 13.5 13.5" /><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 2H9.83a2 2 0 0 1-2-2l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 2h3.84a2 2 0 0 1 2 2l.35 3.83" /></IconBase>;
+        const Trophy = (p) => <IconBase {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></IconBase>;
+        const RotateCcw = (p) => <IconBase {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></IconBase>;
+        const Activity = (p) => <IconBase {...p}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></IconBase>;
+        const CheckCircle2 = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></IconBase>;
+        const Info = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></IconBase>;
+        const AlertTriangle = (p) => <IconBase {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></IconBase>;
+        const HistoryIcon = (p) => <IconBase {...p}><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></IconBase>;
+        const XIcon = (p) => <IconBase {...p}><path d="M18 6 6 18" /><path d="m6 6 18 12" /></IconBase>;
+        const Dumbbell = (p) => <IconBase {...p}><path d="m6.5 6.5 11 11" /><path d="m21 21-1-1" /><path d="m3 3 1 1" /><path d="m18 22 4-4" /><path d="m2 6 4-4" /><path d="m3 10 7-7" /><path d="m14 21 7-7" /></IconBase>;
+        const ClipboardList = (p) => <IconBase {...p}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></IconBase>;
+        const ChevronDown = (p) => <IconBase {...p}><path d="m6 9 6 6 6-6"/></IconBase>;
+        const ChevronUp = (p) => <IconBase {...p}><path d="m18 15-6-6-6 6"/></IconBase>;
+        const Trash2 = (p) => <IconBase {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconBase>;
+        const Edit2 = (p) => <IconBase {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></IconBase>;
+        const CalendarIcon = (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconBase>;
+        const ArrowLeft = (p) => <IconBase {...p}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></IconBase>;
+        const ArrowRight = (p) => <IconBase {...p}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></IconBase>;
+        const HeartPulse = (p) => <IconBase {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></IconBase>;
+        const TrendingUp = (p) => <IconBase {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></IconBase>;
+        const Backpack = (p) => <IconBase {...p}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M2 10h20"/></IconBase>;
+        const Smile = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></IconBase>;
+        const Meh = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><line x1="8" x2="16" y1="15" y2="15"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></IconBase>;
+        const Frown = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></IconBase>;
+        const Timer = (p) => <IconBase {...p}><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></IconBase>;
+        const Battery = (p) => <IconBase {...p}><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><line x1="22" x2="22" y1="11" y2="13"/></IconBase>;
+        const CalendarCheck = (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></IconBase>;
+
+        // --- CONFIG & DATES ---
+        const PROGRAM_START_DATE = new Date('2025-12-01'); // Lundi 1er Décembre 2025
+        const TARGET_SUMMIT_DATE = new Date('2026-08-15'); // Date cible Cervin (Approx mi-août)
+        
+        const GUIDE_DATES = [
+            '2025-12-20',
+            '2026-01-17',
+            '2026-01-18',
+            '2026-02-14',
+            '2026-02-15',
+            '2026-03-07',
+            '2026-03-08'
+        ];
+
+        // --- DATA ---
+        const phasesData = [
+            {
+                id: 'winter',
+                title: "PHASE 1 : HIVER",
+                subtitle: "Foncier & Technique",
+                period: "Déc - Mars",
+                color: "text-blue-400",
+                description: "Alternance Charge/Guide.",
+                sessions: [
+                    {
+                        id: 'w-a-interval',
+                        weekType: 'A',
+                        type: 'interval',
+                        title: "1. Fractionné Côte",
+                        desc: "RESSENTI : Goût métallique, envie d'arrêter. C'est LA séance clé pour le cardio.",
+                        loc: "Colline du Château",
+                        duration: "45 min",
+                        durationMin: 45,
+                        intensity: "Zone 5 (Max)",
+                        xp: 150,
+                        watchTip: "Action Button : Appuyez pour marquer chaque tour (Montée/Descente). Vérifiez la baisse de FC pendant la récup.",
+                        routine: [
+                            "1. ECHAUFFEMENT (15 min) : Footing très lent sur le plat (Quai des Etats-Unis).",
+                            "2. CORPS DE SÉANCE : Trouvez une côte raide (Escaliers Château).",
+                            "   • Montez VITE pendant 3 minutes (Sans sac).",
+                            "   • Redescendez en marchant 3 minutes (Récup).",
+                            "   • RÉPÉTEZ 5 FOIS ce cycle.",
+                            "3. RETOUR CALME (10 min) : Trot très lent pour rentrer."
+                        ]
+                    },
+                    {
+                        id: 'w-a-gym',
+                        weekType: 'A',
+                        type: 'gym',
+                        title: "2. Musculation Fondation",
+                        desc: "RESSENTI : Tremblements musculaires, brûlure locale intense.",
+                        loc: "Salle / Maison",
+                        duration: "45 min",
+                        durationMin: 45,
+                        intensity: "Musculaire",
+                        xp: 120,
+                        watchTip: "Utilisez le mode 'Renforcement fonctionnel'. Surveillez les temps de repos (ne dépassez pas 1min30).",
+                        routine: [
+                            "Echauffement articulaire (5 min)",
+                            "Squat Goblet (Haltère) : 4 x 12 réps (Haltère 12kg-16kg ou Sac 5kg).",
+                            "Fentes Arrière : 3 x 12 / jambe (Avec le même poids).",
+                            "Gainage Planche : 4 x 45 sec (Repos 1'00)",
+                            "Mountain Climbers : 3 x 30 sec",
+                            "Chaise (contre un mur) : 3 x 1 min (Mental !)"
+                        ]
+                    },
+                    {
+                        id: 'w-b-run',
+                        weekType: 'B',
+                        type: 'run',
+                        title: "1. Footing Actif",
+                        desc: "RESSENTI : Aisance totale. Maintien de forme avant la sortie.",
+                        loc: "Promenade / Gairaut",
+                        duration: "45 min",
+                        durationMin: 45,
+                        intensity: "Zone 2 (Facile)",
+                        xp: 80,
+                        watchTip: "Alerte FC : Réglez une alerte de fréquence cardiaque haute pour ne jamais dépasser la Zone 2.",
+                    },
+                    {
+                        id: 'w-b-guide',
+                        weekType: 'B',
+                        type: 'guide',
+                        title: "2. Sortie Guide",
+                        desc: "RESSENTI : Concentration maximale. Application technique.",
+                        loc: "Mercantour",
+                        duration: "Journée",
+                        durationMin: 420, // 7h
+                        intensity: "Technique",
+                        xp: 300,
+                        watchTip: "Mode 'Randonnée'. Utilisez les Waypoints pour marquer le départ/voiture au cas où la météo tourne.",
+                        routine: [
+                            "SAC À DOS : Portez votre équipement réel complet.",
+                            "Poids estimé : 5 à 7 kg.",
+                            "Objectif : Tester le confort du portage en situation réelle (réglages bretelles, frottements)."
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'spring',
+                title: "PHASE 2 : PRINTEMPS",
+                subtitle: "Volume & Pied Montagnard",
+                period: "Avril - Mai",
+                color: "text-emerald-400",
+                description: "Choix : A (Dénivelé/Muscu) ou B (Grimpe).",
+                sessions: [
+                    {
+                        id: 's-a-shock',
+                        weekType: 'A',
+                        type: 'shock',
+                        title: "1. Défi Mont Chauve",
+                        desc: "Alternative locale au Nietzsche. Montée sèche sur sentier caillouteux technique.",
+                        loc: "Départ Valrose / Aire St-Michel",
+                        duration: "1h30",
+                        durationMin: 90,
+                        intensity: "Max",
+                        xp: 250,
+                        watchTip: "Métrique clé : Vitesse verticale. Surveillez le dénivelé positif cumulé.",
+                        routine: [
+                            "SAC À DOS : Lestez avec 5-6 kg (bouteilles d'eau).",
+                            "1. APPROCHE (30min) : Départ Valrose -> Aire St-Michel (Jogging échauffement ou Bus 5 pour s'économiser).",
+                            "2. LE MUR : Barrière Aire St-Michel -> Sommet Mont Chauve. Marche active puissante (Power Hiking). Ne courez pas !",
+                            "3. DESCENTE : Attention aux chevilles avec le sac. Contrôle total."
+                        ]
+                    },
+                    {
+                        id: 's-a-gym',
+                        weekType: 'A',
+                        type: 'gym',
+                        title: "2. Muscu Endurance",
+                        desc: "RESSENTI : Envie de lâcher les poids avant la fin.",
+                        loc: "Salle",
+                        duration: "50 min",
+                        durationMin: 50,
+                        intensity: "Musculaire",
+                        xp: 150,
+                        watchTip: "Lancez 'Fractionné' si vous faites du circuit training pour avoir les bips de changement d'atelier.",
+                        routine: [
+                            "Box Step-ups : 3 x 15 / jambe. INDISPENSABLE : Avec sac à dos 8-10kg.",
+                            "Mollets debout (sur marche) : 4 x 20 (Brûlure)",
+                            "Fentes marchées : 3 x 20 pas (Avec sac si possible)",
+                            "Russian Twist (Abdos) : 3 x 20",
+                            "Gainage latéral : 3 x 45 sec / côté"
+                        ]
+                    },
+                    {
+                        id: 's-b-run',
+                        weekType: 'B',
+                        type: 'run',
+                        title: "1. Boucle du Puget",
+                        desc: "Montée vers Gairaut/Canal. 8km A/R. Zone 2 (Marchez si trop raide).",
+                        loc: "Départ Arrêt Puget (Nice Nord)",
+                        duration: "1h00 - 1h15",
+                        durationMin: 70,
+                        intensity: "Zone 2",
+                        xp: 100,
+                        watchTip: "Gérez l'effort dans la montée initiale. Ne passez pas en Zone 4.",
+                        routine: [
+                            "1. DEPART : Arrêt Puget (Borriglione).",
+                            "2. MONTEE : Remontez l'Avenue de Gairaut jusqu'au Vieux Chemin de Gairaut.",
+                            "3. LE PLAT : Rejoignez le Canal de Gairaut. Profitez de la vue.",
+                            "4. RETOUR : Redescendez par le même chemin."
+                        ]
+                    },
+                    {
+                        id: 's-b-climb',
+                        weekType: 'B',
+                        type: 'climb',
+                        title: "2. Escalade en Grosses",
+                        desc: "TECHNIQUE : Confiance pieds/mains.",
+                        loc: "La Turbie",
+                        duration: "3h00",
+                        durationMin: 180,
+                        intensity: "Technique",
+                        xp: 200,
+                        watchTip: "Mode 'Escalade'. Désactivez l'écran toujours allumé pour économiser la batterie si sortie longue.",
+                        routine: [
+                            "SAC À DOS : Grimpez avec un petit sac (3-4kg) pour s'habituer au changement de centre de gravité.",
+                            "CHAUSSURES : Grosses chaussures d'alpinisme obligatoires."
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'summer',
+                title: "PHASE 3 : ÉTÉ (RUSH)",
+                subtitle: "Guerrier de la Salle",
+                period: "Juin - Juillet",
+                color: "text-orange-400",
+                description: "Choix : A (Intensité) ou B (Volume Indoor).",
+                sessions: [
+                    {
+                        id: 'su-a-machine',
+                        weekType: 'A',
+                        type: 'gym',
+                        title: "1. Machine Infernale",
+                        desc: "RESSENTI : Lutte mentale. Interdiction de se tenir.",
+                        loc: "Salle",
+                        duration: "45 min NON-STOP",
+                        durationMin: 45,
+                        intensity: "Zone 4",
+                        xp: 180,
+                        watchTip: "Surveillez la FC. Elle doit monter progressivement et rester haute (Zone 4) sans pic brutal.",
+                        routine: [
+                            "SAC À DOS : 8 à 10 kg (Objectif Cervin).",
+                            "1. REGLAGE : Tapis pente 15% (Max) ou StairMaster.",
+                            "2. ACTION : Marcher 45 minutes sans s'arrêter avec le sac.",
+                            "3. IMPORTANT : Ne jamais poser les mains sur les barres."
+                        ]
+                    },
+                    {
+                        id: 'su-a-gym',
+                        weekType: 'A',
+                        type: 'gym',
+                        title: "2. Muscu Descente",
+                        desc: "RESSENTI : Douleur inhabituelle (freinage). Epuisement profond.",
+                        loc: "Salle",
+                        duration: "45 min",
+                        durationMin: 45,
+                        intensity: "Musculaire",
+                        xp: 150,
+                        watchTip: "Ne cherchez pas le cardio ici. Focus sur le tempo lent (3 secondes descente).",
+                        routine: [
+                            "Leg Press Unilatérale : 4 x 8 / jambe. (Pousser normal, retenir 3 secondes la descente).",
+                            "Farmer Walk (Marche du fermier) : 4 x 1 min avec haltères très lourds (simule le poids du sac sur les trapèzes).",
+                            "Step-Downs Lents : 3 x 12 / jambe (Descendre du step en 3 secondes).",
+                            "Suspension barre (Grip) : 3 x Max temps"
+                        ]
+                    },
+                    {
+                        id: 'su-b-urb',
+                        weekType: 'B',
+                        type: 'run',
+                        title: "1. Urban Alpinism",
+                        desc: "RESSENTI : Sensation d'étouffement. Exténué rapidement.",
+                        loc: "Port de Nice",
+                        duration: "40 min",
+                        durationMin: 40,
+                        intensity: "Zone 5",
+                        xp: 150,
+                        watchTip: "Métrique : Gain d'altitude total. Essayez de battre votre record de D+ chaque semaine.",
+                        routine: [
+                            "SAC À DOS : Optionnel. Si vous le mettez (5kg max), ne courez pas à la descente.",
+                            "1. ECHAUFFEMENT (10 min) : Trot autour du Port.",
+                            "2. LE BLOC (20 min) : Escaliers de Coco Beach ou Château.",
+                            "   • Montée : 2 marches par 2, dynamique, A FOND.",
+                            "   • Descente : Trot souple (récup active).",
+                            "   • Enchaînez sans pause en bas.",
+                            "3. RETOUR (10 min) : Marche/Trot lent."
+                        ]
+                    },
+                    {
+                        id: 'su-b-core',
+                        weekType: 'B',
+                        type: 'gym',
+                        title: "2. Gainage Express",
+                        desc: "RESSENTI : Tremblements abdominaux intenses.",
+                        loc: "Maison",
+                        duration: "20 min",
+                        durationMin: 20,
+                        intensity: "Core",
+                        xp: 100,
+                        watchTip: "Utilisez le minuteur de la montre pour les temps de planche précis.",
+                        routine: [
+                            "Planche classique : 3 x 1 min (Repos 30s)",
+                            "Superman (Lombaires) : 3 x 20 réps (Repos 30s)",
+                            "Hollow Body Hold (La banane) : 3 x 30 sec (Dur !)",
+                            "Planche latérale : 2 x 45 sec / côté"
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'final',
+                title: "PHASE 4 : FINAL",
+                subtitle: "Affûtage & Sommet",
+                period: "Août",
+                color: "text-red-500",
+                description: "Choix : A (Acclimatation) ou B (Repos).",
+                sessions: [
+                    {
+                        id: 'f-accli',
+                        weekType: 'A',
+                        type: 'accli',
+                        title: "Acclimatation (J-2)",
+                        desc: "RESSENTI : Souffle court. Pas rapide mais régulier.",
+                        loc: "Zermatt",
+                        duration: "4h00",
+                        durationMin: 240,
+                        intensity: "Haute Altitude",
+                        xp: 500,
+                        watchTip: "Surveillez la SpO2 (Oxygène sanguin) au repos le soir. Et l'altimètre en direct.",
+                        routine: [
+                            "SAC À DOS : Poids réel du jour J (8-10kg).",
+                            "Objectif : S'habituer au poids en haute altitude."
+                        ]
+                    },
+                    {
+                        id: 'f-maintien',
+                        weekType: 'B',
+                        type: 'run',
+                        title: "Maintien (J-15)",
+                        desc: "RESSENTI : Trop plein d'énergie. On se freine.",
+                        loc: "Cap de Nice",
+                        duration: "45 min",
+                        durationMin: 45,
+                        intensity: "Zone 1",
+                        xp: 100,
+                        watchTip: "Zone 1 stricte. Si la montre bip, ralentissez immédiatement.",
+                    }
+                ]
+            }
+        ];
+
+        // --- UTILS ---
+        const formatDate = (date) => {
+            return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        };
+
+        const getWeekDateRange = (weekIndex) => {
+            const start = new Date(PROGRAM_START_DATE);
+            start.setDate(start.getDate() + (weekIndex * 7));
+            const end = new Date(start);
+            end.setDate(end.getDate() + 6);
+            
+            const daysInWeek = [];
+            let current = new Date(start);
+            while (current <= end) {
+                daysInWeek.push(current.toISOString().split('T')[0]);
+                current.setDate(current.getDate() + 1);
+            }
+            
+            return {
+                startStr: formatDate(start),
+                endStr: formatDate(end),
+                daysInWeek
+            };
+        };
+        
+        const getCurrentCalendarWeekIndex = () => {
+            const now = new Date();
+            const start = new Date(PROGRAM_START_DATE);
+            const diffTime = now - start;
+            // Calculate week difference. 
+            // If before start, return 0. 
+            // 1000ms * 60s * 60m * 24h * 7d
+            const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+            return diffWeeks < 0 ? 0 : diffWeeks;
+        };
+
+        const isGuideWeek = (daysInWeek) => {
+            return daysInWeek.some(day => GUIDE_DATES.includes(day));
+        };
+
+        const formatDuration = (minutes) => {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            if (h > 0) return `${h}h${m > 0 ? m : ''}`;
+            return `${m} min`;
+        };
+
+        const getDaysBeforeTarget = () => {
+            const today = new Date();
+            const diffTime = Math.abs(TARGET_SUMMIT_DATE - today);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        };
+
+        // --- HELPERS ---
+        const splitKey = (key) => {
+            const idx = key.indexOf('-');
+            if (idx === -1) return [key, ''];
+            return [key.substring(0, idx), key.substring(idx + 1)];
+        };
+
+        // --- COMPONENTS ---
+
+        const ProgressBar = ({ altitude }) => {
+            const percent = Math.min((altitude / 4478) * 100, 100);
+            const daysLeft = getDaysBeforeTarget();
+
+            return (
+                <div className="w-full relative mb-2">
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                        <span className="flex items-center gap-1"><Timer size={12}/> J-{daysLeft} Sommet</span>
+                        <span>{Math.floor(altitude)}m / 4478m</span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                        <div 
+                            className="bg-gradient-to-r from-blue-500 via-purple-500 to-red-500 h-3 rounded-full transition-all duration-1000 ease-out"
+                            style={{ width: `${percent}%` }}
+                        ></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const WatchTip = ({ text }) => (
+            <div className="mt-2 bg-slate-900/80 rounded p-2 border border-slate-700 flex gap-2 items-start animate-fade-in">
+                <div className="bg-orange-500/20 p-1 rounded text-orange-400 mt-0.5">
+                    <Watch size={14} />
+                </div>
+                <div className="text-xs text-slate-300">
+                    <span className="font-bold text-orange-400">Apple Watch :</span> {text}
+                </div>
+            </div>
+        );
+
+        const RoutineDisplay = ({ routine }) => (
+            <div className="mt-3 bg-slate-900/50 rounded p-3 border-l-2 border-orange-500 animate-fade-in">
+                <h4 className="text-xs font-bold text-orange-400 mb-2 uppercase flex items-center gap-1">
+                    <ClipboardList size={12}/> Détails de la séance
+                </h4>
+                <ul className="space-y-2">
+                    {routine.map((exo, idx) => (
+                        <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
+                            {exo.includes("SAC") ? (
+                                <span className="text-blue-400 mt-0.5"><Backpack size={12}/></span>
+                            ) : (
+                                <span className="text-orange-500 mt-0.5">•</span>
+                            )}
+                            <span className={exo.includes("SAC") ? "font-bold text-blue-200" : ""}>{exo}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        );
+
+        const VFCInput = ({ session, completedDetails, onUpdateDetails }) => {
+            const currentVal = completedDetails && completedDetails[`w${session.weekOffset}-${session.id}`]?.hrv || '';
+            const [localVal, setLocalVal] = useState(currentVal);
+
+            const handleBlur = () => {
+                if (localVal) {
+                    onUpdateDetails(session, { hrv: parseFloat(localVal) });
+                }
+            };
+
+            return (
+                <div className="mt-2 pt-2 border-t border-slate-700/50 flex justify-between items-center text-xs">
+                    <span className="text-slate-400 flex items-center gap-1"><Battery size={12} className="text-purple-400"/> VFC (lendemain) :</span>
+                    <div className="flex gap-1 items-center">
+                        <input 
+                            type="number" 
+                            className="w-12 bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-right text-white focus:outline-none focus:border-purple-500"
+                            placeholder="ms"
+                            value={localVal}
+                            onChange={(e) => setLocalVal(e.target.value)}
+                            onBlur={handleBlur}
+                        />
+                        <span className="text-slate-500">ms</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const CompleteSessionModal = ({ session, onClose, onConfirm }) => {
+            const [difficulty, setDifficulty] = useState(null); 
+            const [note, setNote] = useState('');
+            const [packWeight, setPackWeight] = useState('');
+            const [vo2, setVo2] = useState('');
+
+            const showPackWeight = session.type === 'shock' || session.type === 'gym' || (session.routine && session.routine.some(r => r.includes("SAC")));
+
+            const handleSave = () => {
+                onConfirm(session, { 
+                    difficulty, 
+                    note, 
+                    packWeight: packWeight ? parseFloat(packWeight) : null,
+                    vo2: vo2 ? parseFloat(vo2) : null
+                });
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
+                        <h3 className="text-lg font-bold text-white mb-4">Séance terminée ?</h3>
+                        
+                        {showPackWeight && (
+                            <div className="mb-4">
+                                <label className="text-xs text-slate-400 uppercase font-bold block mb-1">Poids du sac (kg)</label>
+                                <div className="flex items-center gap-2 bg-slate-900 rounded border border-slate-600 p-2">
+                                    <Backpack size={16} className="text-blue-400"/>
+                                    <input 
+                                        type="number" 
+                                        placeholder="Ex: 6.5"
+                                        className="bg-transparent text-white text-sm w-full focus:outline-none"
+                                        value={packWeight}
+                                        onChange={(e) => setPackWeight(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mb-4">
+                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">VO2 Max (Optionnel)</label>
+                            <div className="flex items-center gap-2 bg-slate-900 rounded border border-slate-600 p-2">
+                                <HeartPulse size={16} className="text-pink-400"/>
+                                <input 
+                                    type="number" 
+                                    placeholder="ml/kg"
+                                    className="bg-transparent text-white text-sm w-full focus:outline-none"
+                                    value={vo2}
+                                    onChange={(e) => setVo2(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-slate-400 mb-2">Ressenti :</p>
+                        <div className="flex justify-between gap-2 mb-4">
+                            <button onClick={() => setDifficulty('easy')} className={`flex-1 flex flex-col items-center p-2 rounded-lg border ${difficulty === 'easy' ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-slate-700/50 border-slate-600 text-slate-400'}`}>
+                                <Smile size={24} />
+                                <span className="text-xs mt-1">Facile</span>
+                            </button>
+                            <button onClick={() => setDifficulty('medium')} className={`flex-1 flex flex-col items-center p-2 rounded-lg border ${difficulty === 'medium' ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-slate-700/50 border-slate-600 text-slate-400'}`}>
+                                <Meh size={24} />
+                                <span className="text-xs mt-1">Moyen</span>
+                            </button>
+                            <button onClick={() => setDifficulty('hard')} className={`flex-1 flex flex-col items-center p-2 rounded-lg border ${difficulty === 'hard' ? 'bg-red-600/20 border-red-500 text-red-400' : 'bg-slate-700/50 border-slate-600 text-slate-400'}`}>
+                                <Frown size={24} />
+                                <span className="text-xs mt-1">Dur</span>
+                            </button>
+                        </div>
+
+                        <textarea 
+                            placeholder="Petite note..."
+                            className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm text-white mb-4 focus:outline-none focus:border-blue-500"
+                            rows="2"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                        />
+
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-2 rounded-lg bg-slate-700 text-slate-300 font-bold text-sm">Annuler</button>
+                            <button onClick={handleSave} className="flex-1 py-2 rounded-lg bg-blue-600 text-white font-bold text-sm">Valider (+{session.xp}m)</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SessionCard = ({ session, onInitCompletion, isDone, onUndo, completedDetails, onUpdateDetails }) => {
+            const [showRoutine, setShowRoutine] = useState(false);
+
+            return (
+                <div className={`card-enter relative overflow-hidden rounded-xl border ${isDone ? 'border-green-500/50 bg-green-900/10' : 'border-slate-700 bg-slate-800/50'} p-4 mb-3 transition-all duration-300`}>
+                    <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                                {session.type === 'run' && <Activity size={16} className="text-blue-400" />}
+                                {session.type === 'climb' && <Mountain size={16} className="text-emerald-400" />}
+                                {session.type === 'gym' && <Dumbbell size={16} className="text-orange-400" />}
+                                {session.type === 'interval' && <Activity size={16} className="text-red-400" />}
+                                {session.type === 'guide' && <Trophy size={16} className="text-yellow-400" />}
+                                {session.type === 'shock' && <Activity size={16} className="text-red-500" />}
+                                {session.type === 'accli' && <Mountain size={16} className="text-white" />}
+                                <h3 className={`font-bold ${isDone ? 'text-slate-400 line-through' : 'text-white'}`}>{session.title}</h3>
+                            </div>
+                            <p className="text-sm text-slate-400 mb-2 leading-snug">{session.desc}</p>
+                            
+                            <div className="flex flex-wrap gap-2 text-xs mb-2">
+                                <span className="bg-slate-700 px-2 py-1 rounded flex items-center gap-1">
+                                    <MapPin size={12} /> {session.loc}
+                                </span>
+                                <span className={`px-2 py-1 rounded flex items-center gap-1 font-bold ${
+                                    session.weekType === 'A' ? 'bg-red-900/30 text-red-300 border border-red-500/30' : 'bg-blue-900/30 text-blue-300 border border-blue-500/30'
+                                }`}>
+                                    Sem {session.weekType}
+                                </span>
+                                <span className="bg-slate-700 px-2 py-1 rounded flex items-center gap-1">
+                                    <Watch size={12} /> {session.duration}
+                                </span>
+                            </div>
+
+                            {session.watchTip && <WatchTip text={session.watchTip} />}
+
+                            {session.routine && (
+                                <button 
+                                    onClick={() => setShowRoutine(!showRoutine)}
+                                    className="mt-3 text-xs flex items-center gap-1 text-orange-400 hover:text-orange-300 transition-colors font-medium"
+                                >
+                                    {showRoutine ? <ChevronUp size={14}/> : <ChevronDown size={14}/>} 
+                                    {showRoutine ? "Masquer les détails" : "Voir le programme détaillé"}
+                                </button>
+                            )}
+                            
+                            {showRoutine && session.routine && <RoutineDisplay routine={session.routine} />}
+                            
+                            {/* VFC Input - Always visible, independent of completion */}
+                            <VFCInput session={session} completedDetails={completedDetails} onUpdateDetails={onUpdateDetails} />
+                        </div>
+                        
+                        <button 
+                            onClick={() => isDone ? onUndo(session) : onInitCompletion(session)}
+                            className={`btn-tap ml-3 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${isDone ? 'bg-green-500 border-green-500 text-white' : 'border-slate-600 hover:border-slate-400 text-transparent'}`}
+                        >
+                            <CheckCircle2 size={24} className={isDone ? 'text-white' : 'text-slate-600'} />
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const ConfirmResetModal = ({ onConfirm, onCancel }) => (
+            <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-slate-800 w-full max-w-xs rounded-2xl border border-slate-700 shadow-2xl p-6 text-center">
+                    <div className="mb-4">
+                        <div className="mx-auto bg-blue-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-4 text-blue-400">
+                            <RotateCcw size={24} />
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">Semaine Suivante ?</h3>
+                        <p className="text-sm text-slate-400">
+                            Cela archivera la semaine en cours et adaptera le programme pour la semaine suivante.
+                        </p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={onCancel} className="flex-1 py-2 rounded-lg bg-slate-700 text-slate-300 font-bold text-sm">Annuler</button>
+                        <button onClick={onConfirm} className="flex-1 py-2 rounded-lg bg-blue-600 text-white font-bold text-sm">Valider</button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const HistoryModal = ({ completedSessions, phasesData, onClose, onDeleteWeek, onEditWeek, completedDetails }) => {
+            const allSessions = useMemo(() => phasesData.flatMap(p => p.sessions), [phasesData]);
+            const getSessionDetails = (id) => allSessions.find(s => s.id === id);
+
+            const history = useMemo(() => {
+                const grouped = {};
+                Object.keys(completedSessions).forEach(key => {
+                    const [weekStr, sessId] = splitKey(key);
+                    const weekNum = parseInt(weekStr.replace('w', ''));
+                    if (!grouped[weekNum]) grouped[weekNum] = [];
+                    const details = getSessionDetails(sessId);
+                    if (details) grouped[weekNum].push({ ...details, key });
+                });
+                return grouped;
+            }, [completedSessions, allSessions]);
+
+            const sortedWeeks = Object.keys(history).sort((a, b) => b - a);
+
+            return (
+                <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-800 w-full max-w-sm max-h-[80vh] rounded-2xl border border-slate-700 shadow-2xl flex flex-col">
+                        <div className="p-4 border-b border-slate-700 flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2"><HistoryIcon className="text-blue-400" /> Journal</h2>
+                            <button onClick={onClose}><XIcon size={20} className="text-slate-400" /></button>
+                        </div>
+                        <div className="overflow-y-auto p-4 flex-1 scrollbar-thin">
+                            {sortedWeeks.length === 0 ? <p className="text-center text-slate-500 py-10">Aucune séance archivée.</p> : 
+                                sortedWeeks.map(week => (
+                                    <div key={week} className="mb-6 last:mb-0 relative group bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-700">
+                                            <h3 className="text-sm font-bold text-white uppercase tracking-widest">Semaine {parseInt(week) + 1}</h3>
+                                            <div className="flex gap-1">
+                                                <button 
+                                                    onClick={() => {
+                                                        if(confirm(`Modifier la semaine ${parseInt(week) + 1} ?`)) onEditWeek(parseInt(week));
+                                                    }}
+                                                    className="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white p-2 rounded transition-colors"
+                                                >
+                                                    <Edit2 size={14} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        if(confirm(`Supprimer la semaine ${parseInt(week) + 1} ?`)) onDeleteWeek(parseInt(week));
+                                                    }}
+                                                    className="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white p-2 rounded transition-colors"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">{history[week].map((s, i) => {
+                                            const detail = completedDetails[s.key] || {};
+                                            return (
+                                                <div key={i} className="flex flex-col bg-slate-900/30 p-2 rounded">
+                                                    <div className="flex justify-between items-center text-sm mb-1">
+                                                        <span className="text-slate-300">{s.title}</span>
+                                                        <span className="text-green-400 font-bold text-xs bg-green-900/30 px-2 py-0.5 rounded">+{s.xp}m</span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 text-[10px] items-center text-slate-400">
+                                                        {detail.difficulty && (
+                                                            <>
+                                                                {detail.difficulty === 'easy' && <span className="text-green-400 flex items-center gap-1"><Smile size={10}/> Facile</span>}
+                                                                {detail.difficulty === 'medium' && <span className="text-blue-400 flex items-center gap-1"><Meh size={10}/> Moyen</span>}
+                                                                {detail.difficulty === 'hard' && <span className="text-red-400 flex items-center gap-1"><Frown size={10}/> Dur</span>}
+                                                            </>
+                                                        )}
+                                                        {detail.packWeight && <span className="text-orange-400 flex items-center gap-1"><Backpack size={10}/> {detail.packWeight}kg</span>}
+                                                        {detail.vo2 && <span className="text-pink-400 flex items-center gap-1"><HeartPulse size={10}/> {detail.vo2}ml</span>}
+                                                        {detail.hrv && <span className="text-purple-400 flex items-center gap-1"><Battery size={10}/> {detail.hrv}ms</span>}
+                                                    </div>
+                                                    {detail.note && <div className="mt-1 italic border-l-2 border-slate-700 pl-2 text-[10px] text-slate-500">{detail.note}</div>}
+                                                </div>
+                                            );
+                                        })}</div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+            const [userAltitude, setUserAltitude] = useState(0); 
+            const [completedSessions, setCompletedSessions] = useState({}); 
+            const [completedDetails, setCompletedDetails] = useState({}); 
+            const [weekOffset, setWeekOffset] = useState(0); 
+            const [showHistory, setShowHistory] = useState(false);
+            const [showResetConfirm, setShowResetConfirm] = useState(false);
+            const [vo2History, setVo2History] = useState([]); 
+            const [manualWeekType, setManualWeekType] = useState('A'); 
+            const [sessionToComplete, setSessionToComplete] = useState(null); 
+            
+            // Load state
+            useEffect(() => {
+                const savedAlt = localStorage.getItem('cervin_altitude');
+                const savedSess = localStorage.getItem('cervin_sessions');
+                const savedDetails = localStorage.getItem('cervin_details');
+                const savedWeek = localStorage.getItem('cervin_week_offset');
+                const savedVO2 = localStorage.getItem('cervin_vo2');
+                
+                if (savedAlt) setUserAltitude(parseInt(savedAlt));
+                if (savedSess) setCompletedSessions(JSON.parse(savedSess));
+                if (savedDetails) setCompletedDetails(JSON.parse(savedDetails));
+                if (savedVO2) setVo2History(JSON.parse(savedVO2));
+
+                // Auto-start on CURRENT week based on calendar
+                const calendarWeek = getCurrentCalendarWeekIndex();
+                
+                // If user has saved state, maybe we prioritize it? 
+                // User requested "open on current week". 
+                // But if they manually navigated back and refreshed? 
+                // Let's default to calendar week on load.
+                setWeekOffset(calendarWeek);
+                
+                const month = new Date().getMonth(); 
+                if (month >= 11 || month <= 2) setCurrentPhaseIndex(0); 
+                else if (month >= 3 && month <= 4) setCurrentPhaseIndex(1); 
+                else if (month >= 5 && month <= 6) setCurrentPhaseIndex(2); 
+                else setCurrentPhaseIndex(3); 
+            }, []);
+
+            // Save state
+            useEffect(() => {
+                localStorage.setItem('cervin_altitude', userAltitude);
+                localStorage.setItem('cervin_sessions', JSON.stringify(completedSessions));
+                localStorage.setItem('cervin_details', JSON.stringify(completedDetails));
+                localStorage.setItem('cervin_week_offset', weekOffset);
+                localStorage.setItem('cervin_vo2', JSON.stringify(vo2History));
+            }, [userAltitude, completedSessions, completedDetails, weekOffset, vo2History]);
+
+            // Calculate Week Details
+            const weekInfo = useMemo(() => {
+                const { startStr, endStr, daysInWeek } = getWeekDateRange(weekOffset);
+                const isGuide = isGuideWeek(daysInWeek);
+                return { startStr, endStr, isGuide };
+            }, [weekOffset]);
+
+            const currentPhase = phasesData[currentPhaseIndex];
+            const isWinter = currentPhase.id === 'winter';
+            const activeWeekType = isWinter ? (weekInfo.isGuide ? 'B' : 'A') : manualWeekType;
+            const displayedSessions = currentPhase.sessions.filter(s => s.weekType === activeWeekType || s.weekType === 'ALL');
+            const totalDurationMin = useMemo(() => displayedSessions.reduce((acc, curr) => acc + (curr.durationMin || 0), 0), [displayedSessions]);
+
+            const initSessionCompletion = (session) => {
+                setSessionToComplete(session);
+            };
+
+            const confirmSessionCompletion = (session, details) => {
+                const currentWeekKey = `w${weekOffset}-${session.id}`;
+                const newSessions = { ...completedSessions, [currentWeekKey]: true };
+                const newDetails = { ...completedDetails, [currentWeekKey]: details };
+                
+                if (details.vo2) {
+                    const newEntry = { date: new Date().toISOString(), value: details.vo2 };
+                    setVo2History(prev => [...prev, newEntry]);
+                }
+                
+                setCompletedSessions(newSessions);
+                setCompletedDetails(newDetails);
+                setUserAltitude(prev => prev + session.xp);
+                setSessionToComplete(null);
+            };
+
+            const updateSessionDetails = (session, newPartialDetails) => {
+                const currentWeekKey = `w${weekOffset}-${session.id}`;
+                const existing = completedDetails[currentWeekKey] || {};
+                const newDetails = { ...completedDetails, [currentWeekKey]: { ...existing, ...newPartialDetails } };
+                setCompletedDetails(newDetails);
+            };
+
+            const undoSession = (session) => {
+                const currentWeekKey = `w${weekOffset}-${session.id}`;
+                if(confirm("Annuler cette séance ?")) {
+                    const newSessions = { ...completedSessions };
+                    delete newSessions[currentWeekKey];
+                    setCompletedSessions(newSessions);
+                    setUserAltitude(prev => Math.max(0, prev - session.xp));
+                }
+            };
+
+            const confirmResetWeek = () => {
+                setWeekOffset(prev => prev + 1);
+                setShowResetConfirm(false);
+            };
+
+            const deleteWeekFromHistory = (weekNum) => {
+                const newSessions = { ...completedSessions };
+                let altReduction = 0;
+                const allSessions = phasesData.flatMap(p => p.sessions);
+                Object.keys(newSessions).forEach(key => {
+                    const [weekStr, sessId] = splitKey(key);
+                    const w = parseInt(weekStr.replace('w', ''));
+                    if (w === weekNum) {
+                        const sess = allSessions.find(s => s.id === sessId);
+                        if (sess) altReduction += sess.xp;
+                        delete newSessions[key];
+                    }
+                });
+                setCompletedSessions(newSessions);
+                setUserAltitude(prev => Math.max(0, prev - altReduction));
+            };
+
+            const editWeek = (weekNum) => {
+                setWeekOffset(weekNum);
+                setShowHistory(false);
+            };
+
+            return (
+                <div className="min-h-screen pb-20 max-w-md mx-auto matterhorn-gradient shadow-2xl overflow-hidden relative">
+                    {/* Header */}
+                    <div className="bg-slate-900/80 backdrop-blur-md p-6 sticky top-0 z-20 border-b border-slate-700">
+                        <div className="flex justify-between items-end mb-4">
+                            <div>
+                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">Objectif <span className="text-red-500">Cervin</span></h1>
+                                <p className="text-xs text-slate-400">Nice - Prépa Physique</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-3xl font-bold text-white leading-none">{Math.floor(userAltitude)}<span className="text-sm font-normal text-slate-500">m</span></div>
+                            </div>
+                        </div>
+                        <ProgressBar altitude={userAltitude} />
+                    </div>
+
+                    {/* Phases */}
+                    <div className="flex overflow-x-auto p-2 gap-2 bg-slate-900/50 scrollbar-hide">
+                        {phasesData.map((phase, idx) => (
+                            <button key={phase.id} onClick={() => setCurrentPhaseIndex(idx)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${currentPhaseIndex === idx ? 'bg-white text-slate-900' : 'bg-slate-800 text-slate-400'}`}>{phase.period}</button>
+                        ))}
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="p-4">
+                        <div className="mb-4">
+                            <h2 className={`text-xl font-bold ${currentPhase.color} mb-1`}>{currentPhase.title}</h2>
+                            <p className="text-sm text-slate-300 mb-2">{currentPhase.subtitle}</p>
+                            
+                            {/* Calendar/Week Info Box */}
+                            <div className={`p-3 rounded-xl border flex flex-col gap-2 transition-colors ${weekInfo.isGuide && isWinter ? 'bg-blue-900/20 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                                        <CalendarIcon size={14} className={weekInfo.isGuide && isWinter ? "text-blue-400" : "text-slate-400"} />
+                                        Semaine {weekOffset + 1}
+                                    </h3>
+                                    <span className="text-xs text-slate-400 font-mono">{weekInfo.startStr} - {weekInfo.endStr}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className={`text-xs font-bold px-2 py-1 rounded ${activeWeekType === 'A' ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                                        {activeWeekType === 'A' ? 'TYPE A' : 'TYPE B'}
+                                    </span>
+                                    {isWinter && weekInfo.isGuide && <span className="text-xs text-blue-300 flex items-center gap-1"><Mountain size={12}/> Guide détecté</span>}
+                                    {!isWinter && (
+                                        <div className="flex bg-slate-900 rounded p-0.5 ml-auto">
+                                            <button onClick={() => setManualWeekType('A')} className={`px-2 py-0.5 rounded text-[10px] font-bold ${manualWeekType === 'A' ? 'bg-red-600 text-white' : 'text-slate-400'}`}>A</button>
+                                            <button onClick={() => setManualWeekType('B')} className={`px-2 py-0.5 rounded text-[10px] font-bold ${manualWeekType === 'B' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>B</button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-slate-700/50 flex justify-between items-center text-xs text-slate-400">
+                                    <span>Total estimé :</span>
+                                    <span className="font-bold text-white flex items-center gap-1"><Watch size={12}/> {formatDuration(totalDurationMin)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end mb-4 gap-2">
+                            <button
+                                onClick={() => setWeekOffset(prev => Math.max(0, prev - 1))}
+                                disabled={weekOffset === 0}
+                                className={`text-xs flex items-center gap-1 transition-colors px-3 py-1.5 rounded-full border ${weekOffset === 0 ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-800 text-slate-600' : 'bg-slate-800 text-slate-400 hover:text-white border-slate-700'}`}
+                            >
+                                <ArrowLeft size={12} /> Précédente
+                            </button>
+                            <button onClick={() => setShowResetConfirm(true)} className="text-xs flex items-center gap-1 text-slate-300 hover:text-white transition-colors bg-blue-600/20 hover:bg-blue-600/40 px-3 py-1.5 rounded-full border border-blue-500/30">
+                                Suivante <ArrowRight size={12} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {displayedSessions.map(session => (
+                                <SessionCard 
+                                    key={session.id} 
+                                    session={{...session, weekOffset}}
+                                    isDone={!!completedSessions[`w${weekOffset}-${session.id}`]}
+                                    onInitCompletion={initSessionCompletion}
+                                    onUndo={undoSession}
+                                    completedDetails={completedDetails}
+                                    onUpdateDetails={updateSessionDetails}
+                                />
+                            ))}
+                            {displayedSessions.length === 0 && (
+                                <div className="text-center py-8 text-slate-500 text-sm italic">
+                                    Aucune séance prévue pour cette phase.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Contextual Tips */}
+                        {isWinter && activeWeekType === 'A' && (
+                             <div className="mt-6 bg-red-900/10 border border-red-700/30 p-4 rounded-xl flex gap-3"><AlertTriangle className="text-red-500 flex-shrink-0" /><p className="text-xs text-red-200"><strong>Semaine Charge :</strong> On met l'intensité au maximum.</p></div>
+                        )}
+                         {isWinter && activeWeekType === 'B' && (
+                             <div className="mt-6 bg-blue-900/10 border border-blue-700/30 p-4 rounded-xl flex gap-3"><Info className="text-blue-500 flex-shrink-0" /><p className="text-xs text-blue-200"><strong>Semaine Guide :</strong> Sortie détectée. Volume réduit.</p></div>
+                        )}
+                        {!isWinter && (
+                             <div className="mt-6 bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex gap-3"><Info className="text-slate-400 flex-shrink-0" /><p className="text-xs text-slate-400">Alternez semaines intenses (A) et volume (B).</p></div>
+                        )}
+                    </div>
+
+                    <div className="fixed bottom-24 right-4 z-40">
+                        <button onClick={() => setShowHistory(true)} className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-full shadow-lg shadow-blue-900/50 transition-all active:scale-95 flex items-center gap-2 pr-4"><HistoryIcon size={20} /><span className="text-xs font-bold">Journal</span></button>
+                    </div>
+
+                    <div className="fixed bottom-0 w-full max-w-md bg-slate-900 border-t border-slate-800 p-4 flex justify-around text-center text-[10px] text-slate-400 z-30">
+                        <div><div className="text-white font-bold text-lg">{Object.keys(completedSessions).length}</div><div>Total Sessions</div></div>
+                        <div><div className="text-white font-bold text-lg">Sem {weekOffset + 1}</div><div>En cours</div></div>
+                        <div><div className="text-white font-bold text-lg">Nice</div><div>Base Camp</div></div>
+                    </div>
+
+                    {showHistory && <HistoryModal completedSessions={completedSessions} completedDetails={completedDetails} phasesData={phasesData} onClose={() => setShowHistory(false)} onDeleteWeek={deleteWeekFromHistory} onEditWeek={editWeek} />}
+                    {showResetConfirm && <ConfirmResetModal onConfirm={confirmResetWeek} onCancel={() => setShowResetConfirm(false)} />}
+                    {sessionToComplete && <CompleteSessionModal session={sessionToComplete} onClose={() => setSessionToComplete(null)} onConfirm={confirmSessionCompletion} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
