@@ -97,6 +97,7 @@
         ];
 
         // --- DATA ---
+        // durationMin added for calculation
         const phasesData = [
             {
                 id: 'winter',
@@ -426,9 +427,6 @@
             const now = new Date();
             const start = new Date(PROGRAM_START_DATE);
             const diffTime = now - start;
-            // Calculate week difference. 
-            // If before start, return 0. 
-            // 1000ms * 60s * 60m * 24h * 7d
             const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
             return diffWeeks < 0 ? 0 : diffWeeks;
         };
@@ -498,12 +496,12 @@
                 <ul className="space-y-2">
                     {routine.map((exo, idx) => (
                         <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
-                            {exo.includes("SAC") ? (
+                            {exo.includes("SAC À DOS") ? (
                                 <span className="text-blue-400 mt-0.5"><Backpack size={12}/></span>
                             ) : (
                                 <span className="text-orange-500 mt-0.5">•</span>
                             )}
-                            <span className={exo.includes("SAC") ? "font-bold text-blue-200" : ""}>{exo}</span>
+                            <span className={exo.includes("SAC À DOS") ? "font-bold text-blue-200" : ""}>{exo}</span>
                         </li>
                     ))}
                 </ul>
@@ -544,7 +542,7 @@
             const [packWeight, setPackWeight] = useState('');
             const [vo2, setVo2] = useState('');
 
-            const showPackWeight = session.type === 'shock' || session.type === 'gym' || (session.routine && session.routine.some(r => r.includes("SAC")));
+            const showPackWeight = session.type === 'shock' || session.type === 'gym' || (session.routine && session.routine.some(r => r.includes("SAC À DOS")));
 
             const handleSave = () => {
                 onConfirm(session, { 
@@ -670,7 +668,6 @@
                             
                             {showRoutine && session.routine && <RoutineDisplay routine={session.routine} />}
                             
-                            {/* VFC Input - Always visible, independent of completion */}
                             <VFCInput session={session} completedDetails={completedDetails} onUpdateDetails={onUpdateDetails} />
                         </div>
                         
@@ -739,7 +736,7 @@
                                             <div className="flex gap-1">
                                                 <button 
                                                     onClick={() => {
-                                                        if(confirm(`Modifier la semaine ${parseInt(week) + 1} ?`)) onEditWeek(parseInt(week));
+                                                        if(confirm(`Modifier la semaine ${parseInt(week) + 1} ?\nCela vous ramènera à cette semaine dans le calendrier.`)) onEditWeek(parseInt(week));
                                                     }}
                                                     className="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white p-2 rounded transition-colors"
                                                 >
@@ -815,18 +812,16 @@
 
                 // Auto-start on CURRENT week based on calendar
                 const calendarWeek = getCurrentCalendarWeekIndex();
-                
-                // If user has saved state, maybe we prioritize it? 
-                // User requested "open on current week". 
-                // But if they manually navigated back and refreshed? 
-                // Let's default to calendar week on load.
                 setWeekOffset(calendarWeek);
                 
-                const month = new Date().getMonth(); 
-                if (month >= 11 || month <= 2) setCurrentPhaseIndex(0); 
-                else if (month >= 3 && month <= 4) setCurrentPhaseIndex(1); 
-                else if (month >= 5 && month <= 6) setCurrentPhaseIndex(2); 
-                else setCurrentPhaseIndex(3); 
+                // Phase determination logic based on weeks
+                let phase = 0;
+                if (calendarWeek >= 35) phase = 3;      // Aug
+                else if (calendarWeek >= 26) phase = 2; // Jun-Jul
+                else if (calendarWeek >= 17) phase = 1; // Apr-May
+                else phase = 0;                         // Dec-Mar
+                
+                setCurrentPhaseIndex(phase);
             }, []);
 
             // Save state
